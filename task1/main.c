@@ -16,8 +16,9 @@ int main(int argc, char** argv) {
     int n;
     scanf("%d", &n);
     int* table = (int*) malloc(n * n * sizeof(int));
-    for(int i = 0; i < n; ++i)
-        for(int j = 0; j < n; ++j)
+    int i, j;
+    for(i = 0; i < n; ++i)
+        for(j = 0; j < n; ++j)
             *(table + i * n + j) = (i + 1) * (j + 1);
     char helper[4];
     while(1) {
@@ -32,8 +33,8 @@ int main(int argc, char** argv) {
             ++length;
         }while(max);
         sprintf(helper, "%%%dd", length);
-        for(int i = y1 - 1; i < y2; ++i) {
-            for(int j = x1 - 1; j < x2; ++j)
+        for(i = y1 - 1; i < y2; ++i) {
+            for(j = x1 - 1; j < x2; ++j)
                 printf(helper, *(table + i * n + j));
             printf("\n");
         }
