@@ -232,7 +232,7 @@ void read() {
 }
 
 int main(int argc, char** argv) {
-    filename = "test.txt";
+    filename = argv[1];
     file = fopen(filename, "a+");
     rewind(file);
     ppl = getStorage();
