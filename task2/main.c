@@ -2,15 +2,14 @@
  * File:   main2.c
  * Author: RinesThaix
  *
- * Created on 21 февраля 2016 г., 13:04
+ * Created on 21 February, 13:04
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-char* filename;
-FILE* file;
+const int defPhone = 32;
 
 void error(char* message) {
     printf("Error occured: %s\n", message);
@@ -20,13 +19,46 @@ char* mem(int size) {
     return malloc(size * sizeof(char));
 }
 
+char* filename;
+FILE* file;
+
 int equals(char* a, char* b) {
     return !strcmp(a, b);
 }
 
-int startsWith(char* a, char* b) {
-    int l1 = strlen(a), l2 = strlen(b);
-    return l2 > l1 ? 0 : strncmp(b, a, l2) == 0;
+int findNumbers(const char* a, const char* b) {
+    char an[defPhone], bn[defPhone];
+    int i, ind1 = 0, ind2 = 0;
+    for(i = 0; i < defPhone; ++i)
+        if(a[i] >= '0' && a[i] <= '9')
+            an[ind1++] = a[i];
+    for(i = 0; i < defPhone; ++i)
+        if(b[i] >= '0' && b[i] <= '9')
+            bn[ind2++] = b[i];
+    if(ind1 != ind2)
+        return 0;
+    for(i = 0; i < ind1; ++i)
+        if(an[i] != bn[i])
+            return 0;
+    return 1;
+}
+
+int findNames(const char* a, const char* b) {
+    char an[defPhone], bn[defPhone];
+    int i;
+    for(i = 0; i < defPhone; ++i)
+        if(a[i] >= 'A' && a[i] <= 'Z') {
+            an[i] = 'a' + a[i] - 'A';
+        }else {
+            an[i] = a[i];
+        }
+    for(i = 0; i < defPhone; ++i)
+        if(b[i] >= 'A' && b[i] <= 'Z') {
+            bn[i] = 'a' + b[i] - 'A';
+        }else {
+            bn[i] = b[i];
+        }
+    return strstr(an, bn) != NULL;
 }
 
 typedef struct {
@@ -73,7 +105,10 @@ void rewriteEverything() {
     for(i = 0; i < ppl.size; ++i) {
         if(ppl.humans[i] != NULL) {
             human* h = ppl.humans[i];
-            fprintf(file, "%d %s %s\n", h->id, h->name, h->phone);
+            if(i == 0)
+                fprintf(file, "%d %s %s", h->id, h->name, h->phone);
+            else
+                fprintf(file, "\n%d %s %s", h->id, h->name, h->phone);
         }
     }
     fclose(file);
@@ -127,7 +162,7 @@ human** _findHuman(char* prefix) {
         found[i] = NULL;
     for(i = 0; i < ppl.size; ++i)
         if(ppl.humans[i] != NULL &&
-                (startsWith(ppl.humans[i]->name, prefix) || startsWith(ppl.humans[i]->phone, prefix)))
+                (findNames(ppl.humans[i]->name, prefix) || findNumbers(ppl.humans[i]->phone, prefix)))
             found[index++] = ppl.humans[i];
     return found;
 }
@@ -188,7 +223,7 @@ void printAll() {
 void read() {
     int id;
     while(!feof(file)) {
-        char* name = mem(32), *phone = mem(16);
+        char* name = mem(defPhone), *phone = mem(defPhone);
         fscanf(file, "%d %s %s", &id, name, phone);
         if(!strlen(name) || !strlen(phone))
             continue;
@@ -197,7 +232,7 @@ void read() {
 }
 
 int main(int argc, char** argv) {
-    filename = /*argv[1]*/"test.txt";
+    filename = "test.txt";
     file = fopen(filename, "a+");
     rewind(file);
     ppl = getStorage();
@@ -207,7 +242,7 @@ int main(int argc, char** argv) {
     scanf("%s", cmd);
     while(!equals(cmd, "exit")) {
         if(equals(cmd, "create")) {
-            char* name = mem(32), *phone = mem(16);
+            char* name = mem(defPhone), *phone = mem(defPhone);
             scanf("%s %s", name, phone);
             human* toAdd = getHuman(name, phone);
             ppl.add(toAdd);
@@ -215,7 +250,7 @@ int main(int argc, char** argv) {
             fclose(file);
             file = fopen(filename, "a");
         }else if(equals(cmd, "find")) {
-            char* prefix = mem(32);
+            char prefix[defPhone];
             scanf("%s", prefix);
             human** found = ppl.find(prefix);
             if(found[0] == NULL)
@@ -228,10 +263,10 @@ int main(int argc, char** argv) {
                     else
                         break;
             }
-            free(prefix);
+            free(found);
         }else if(equals(cmd, "change")) {
             int id;
-            char* subcmd = mem(32), *value = mem(32);
+            char* subcmd = mem(defPhone), *value = mem(defPhone);
             scanf("%d %s %s", &id, subcmd, value);
             if(equals(subcmd, "number")) {
                 if(!ppl.change(id, value, 1))
@@ -260,4 +295,3 @@ int main(int argc, char** argv) {
     fclose(file);
     return (EXIT_SUCCESS);
 }
-
