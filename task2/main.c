@@ -22,7 +22,7 @@ void debug(int id) {
     printf("Debug: %d\n", id);
 }
 
-void arc(void* dest, const void* src) {
+void arc(char* dest, const char* src) {
     memcpy(dest, src, M * sizeof(char));
 }
 
@@ -91,29 +91,51 @@ void printAll() {
             break;
 }
 
+human* getById(int id) {
+    int i;
+    for(i = 0; i < M2; ++i)
+        if(all[i] == NULL)
+            return NULL;
+        else if(all[i]->id == id)
+            return all[i];
+    return NULL;
+}
+
 void addHuman(human* target) {
-    if(target->id != -1) {
-        all[target->id] = target;
-        return;
-    }
     int i;
     for(i = 0; i < M2; ++i) {
         if(all[i] == NULL) {
             all[i] = target;
-            target->id = i;
+            if(target->id != -1)
+                return;
+            int j, current = 0, flag = 1;
+            while(flag) {
+                flag = 0;
+                for(j = 0; j < M2; ++j)
+                    if(all[j] != NULL) {
+                        if(current == all[j]->id) {
+                            ++current;
+                            flag = 1;
+                            break;
+                        }
+                    }else
+                        break;
+            }
+            target->id = current;
             return;
         }
     }
 }
 
 int change(int id, const char* value, int name) {
-    if(id >= M2 || all[id] == NULL)
+    human* target = getById(id);
+    if(target == NULL)
         return 0;
     if(name)
-        arc(all[id]->name, value);
+        arc(target->name, value);
     else {
-        arc(all[id]->phone, value);
-        arcPhone(all[id]->truePhone, getTruePhone(value));
+        arc(target->phone, value);
+        arcPhone(target->truePhone, getTruePhone(value));
     }
     return 1;
 }
@@ -138,16 +160,21 @@ human** find(char* str) {
 }
 
 int removeHuman(int id) {
-    if(id >= M2 || all[id] == NULL)
-        return 0;
-    free(all[id]);
-    all[id] = NULL;
-    int i;
-    for(i = id + 1; i < M2; ++i)
+    int i, st = 0;
+    for(i = 0; i < M2; ++i)
+        if(all[i] != NULL) {
+            if(all[i]->id == id) {
+                st = i;
+                break;
+            }
+        }else
+            return 0;
+    free(all[st]);
+    all[st] = NULL;
+    for(i = st + 1; i < M2; ++i)
         if(all[i] != NULL) {
             all[i - 1] = all[i];
             all[i] = NULL;
-            all[i - 1]->id = i - 1;
         }else
             break;
     return 1;
@@ -238,8 +265,11 @@ int main(int argc, char** argv) {
             human** found = find(str);
             for(i = 0; i < M2; ++i) {
                 human* h = found[i];
-                if(h == NULL)
+                if(h == NULL) {
+                    if(i == 0)
+                        error("No one could be found!");
                     break;
+                }
                 printf("%d %s %s\n", h->id, h->name, h->phone);
             }
             free(found);
