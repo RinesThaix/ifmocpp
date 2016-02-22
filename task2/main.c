@@ -16,7 +16,7 @@ FILE* file;
 
 void error(char* msg) {
     printf("Error occured: %s\n", msg);
-    fflush();
+    fflush(stdout);
 }
 
 void debug(int id) {
@@ -88,7 +88,7 @@ void printAll() {
         if (all[i] != NULL) {
             human* h = all[i];
             printf("%d. %d %s %s %s\n", i, h->id, h->name, h->phone, h->truePhone);
-            fflush();
+            fflush(stdout);
         } else
             break;
 }
@@ -204,7 +204,7 @@ void read() {
 }
 
 int main(int argc, char** argv) {
-    arc(filename, "test.txt");
+    arc(filename, argv[1]);
     file = fopen(filename, "a+");
     rewind(file);
     read();
@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
                     break;
                 }
                 printf("%d %s %s\n", h->id, h->name, h->phone);
-                fflush();
+                fflush(stdout);
             }
             free(found);
         } else if (equals(cmd, "print")) {
