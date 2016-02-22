@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-const int M = 1000, M2 = M * M;
+#define M 1000
+#define M2 1000000
 
 char filename[M];
 FILE* file;
@@ -24,6 +24,11 @@ void debug(int id) {
 
 void arc(void* dest, const void* src) {
     memcpy(dest, src, M * sizeof(char));
+}
+
+void arcPhone(char* dest, char* src) {
+    memcpy(dest, src, M * sizeof(char));
+    free(src);
 }
 
 int equals(const char* a, const char* b) {
@@ -41,7 +46,7 @@ int contains(const char* a, const char* b) {
 }
 
 char* getTruePhone(const char* phone) {
-    char true[M];
+    char* true = malloc(M * sizeof(char));
     int i, j = 0;
     for(i = 0; i < M; ++i)
         true[i] = 0;
@@ -108,7 +113,7 @@ int change(int id, const char* value, int name) {
         arc(all[id]->name, value);
     else {
         arc(all[id]->phone, value);
-        arc(all[id]->truePhone, getTruePhone(value));
+        arcPhone(all[id]->truePhone, getTruePhone(value));
     }
     return 1;
 }
@@ -122,7 +127,9 @@ human** find(char* str) {
         else {
             human* h = all[i];
             int a = contains(h->name, str);
-            int b = equals(h->truePhone, getTruePhone(str));
+            char* true = getTruePhone(str);
+            int b = equals(h->truePhone, true);
+            free(true);
             if(a || b)
                 result[j++] = h;
         }
@@ -162,7 +169,7 @@ void read() {
         toAdd->id = id;
         arc(toAdd->name, name);
         arc(toAdd->phone, phone);
-        arc(toAdd->truePhone, getTruePhone(phone));
+        arcPhone(toAdd->truePhone, getTruePhone(phone));
         addHuman(toAdd);
     }
 }
@@ -188,7 +195,7 @@ int main(int argc, char** argv) {
             h->id = -1;
             arc(h->name, name);
             arc(h->phone, phone);
-            arc(h->truePhone, getTruePhone(phone));
+            arcPhone(h->truePhone, getTruePhone(phone));
             addHuman(h);
             rewrite();
         }else if(equals(cmd, "delete")) {
@@ -244,6 +251,9 @@ int main(int argc, char** argv) {
         scanf("%s", cmd);
     }
     
+    int i;
+    for(i = 0; i < M2; ++i)
+        free(all[i]);
     fclose(file);
     return (EXIT_SUCCESS);
 }
