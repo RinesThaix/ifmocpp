@@ -204,7 +204,7 @@ void read() {
 }
 
 int main(int argc, char** argv) {
-    arc(filename, "test.txt");
+    arc(filename, argv[1]);
     file = fopen(filename, "a+");
     rewind(file);
     read();
