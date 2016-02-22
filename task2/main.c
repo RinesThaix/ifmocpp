@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define M 1000
-#define M2 1000000
+#define M 10500
+#define M2 100000
 
 char filename[M];
 FILE* file;
@@ -204,7 +204,7 @@ void read() {
 }
 
 int main(int argc, char** argv) {
-    arc(filename, argv[1]);
+    arc(filename, "test.txt");
     file = fopen(filename, "a+");
     rewind(file);
     read();
