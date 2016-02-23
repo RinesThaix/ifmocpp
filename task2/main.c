@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define M 10500
-#define M2 100000
+#define M2 100500
 
 char filename[M];
 FILE* file;
