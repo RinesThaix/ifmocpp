@@ -8,28 +8,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define M 10500
-#define M2 100500
+#define ENDC '\0'
 
-char filename[M];
+char* filename;
 FILE* file;
+int lastId = 0;
 
 void error(char* msg) {
-    printf("Error occured: %s\n", msg);
+    printf("[Error] %s\n", msg);
     fflush(stdout);
 }
 
 void debug(int id) {
-    printf("Debug: %d\n", id);
+    printf("[Debug] #%d\n", id);
+    fflush(stdout);
 }
 
-void arc(char* dest, const char* src) {
-    memcpy(dest, src, M * sizeof (char));
+typedef struct {
+    int id;
+    char *name, *phone, *true;
+} human;
+
+typedef struct {
+    int size;
+    human* ppl;
+} all;
+
+int checkForNull(const char* value) {
+    if(equals(value, "")) {
+        error("That string could not be empty!");
+        return 0;
+    }
+    return 1;
 }
 
-void arcPhone(char* dest, char* src) {
-    memcpy(dest, src, M * sizeof (char));
-    free(src);
+char* getTruePhone(const char* phone) {
+    int size = 0;
+    while(phone[size++] != ENDC);
+    char* true = malloc(size * sizeof(char));
+    int i, j = 0;
+    for (i = 0; i < size; ++i)
+        true[i] = 0;
+    for (i = 0; i < size; ++i)
+        if (phone[i] >= '0' && phone[i] <= '9')
+            true[j++] = phone[i];
+    return true;
 }
 
 int equals(const char* a, const char* b) {
@@ -37,256 +60,188 @@ int equals(const char* a, const char* b) {
 }
 
 int contains(const char* a, const char* b) {
-    char an[M], bn[M];
+    int sizea = 0, sizeb = 0;
+    while(a[sizea++] != ENDC);
+    while(b[sizeb++] != ENDC);
+    char an[sizea], bn[sizeb];
     int i;
-    for (i = 0; i < M; ++i)
+    for (i = 0; i < sizea; ++i)
         an[i] = a[i] >= 'A' && a[i] <= 'Z' ? 'a' + a[i] - 'A' : a[i];
-    for (i = 0; i < M; ++i)
+    for (i = 0; i < sizeb; ++i)
         bn[i] = b[i] >= 'A' && b[i] <= 'Z' ? 'a' + b[i] - 'A' : b[i];
     return strstr(an, bn) != NULL;
 }
 
-char* getTruePhone(const char* phone) {
-    char* true = malloc(M * sizeof (char));
-    int i, j = 0;
-    for (i = 0; i < M; ++i)
-        true[i] = 0;
-    for (i = 0; i < M; ++i) {
-        if (phone[i] >= '0' && phone[i] <= '9')
-            true[j++] = phone[i];
+char* read0(FILE* is) {
+    getc(is);
+    char* w = malloc(0), c = fgetc(is);
+    int i = 0, j = 0, block = 1 << 12;
+    while(c != EOF && c != ' ' && c != '\n') {
+        if(i % block == 0)
+            w = realloc(w, ++j * block * sizeof(char));
+        w[i++] = c;
+        c = fgetc(is);
     }
-    return true;
+    w[i] = ENDC;
+    ungetc(' ', is);
+    return w;
 }
 
-typedef struct {
-    int id;
-    char name[M];
-    char phone[M];
-    char truePhone[M];
-} human;
+char* readF() {
+    return read0(file);
+}
 
-human* all[M2];
+char* readC() {
+    return read0(stdin);
+}
+
+all set;
 
 void rewrite() {
     fclose(file);
     file = fopen(filename, "w+");
     int i;
-    for (i = 0; i < M2; ++i) {
-        if (all[i] != NULL) {
-            human* h = all[i];
-            fprintf(file, i == 0 ? "%d %s %s" : "\n%d %s %s", h->id, h->name, h->phone);
-        } else
-            break;
+    for(i = 0; i < set.size; ++i) {
+        human current = set.ppl[i];
+        fprintf(file, i == 0 ? "%d %s %s" : "\n%d %s %s", current.id, current.name, current.phone);
     }
     fclose(file);
     file = fopen(filename, "a");
 }
 
-void printAll() {
-    int i;
-    for (i = 0; i < M2; ++i)
-        if (all[i] != NULL) {
-            human* h = all[i];
-            printf("%d. %d %s %s %s\n", i, h->id, h->name, h->phone, h->truePhone);
-            fflush(stdout);
-        } else
-            break;
-}
-
-human* getById(int id) {
-    int i;
-    for (i = 0; i < M2; ++i)
-        if (all[i] == NULL)
-            return NULL;
-        else if (all[i]->id == id)
-            return all[i];
-    return NULL;
-}
-
-void addHuman(human* target) {
-    int i;
-    for (i = 0; i < M2; ++i) {
-        if (all[i] == NULL) {
-            all[i] = target;
-            if (target->id != -1)
-                return;
-            int j, current = 0, flag = 1;
-            while (flag) {
-                flag = 0;
-                for (j = 0; j < M2; ++j)
-                    if (all[j] != NULL) {
-                        if (current == all[j]->id) {
-                            ++current;
-                            flag = 1;
-                            break;
-                        }
-                    } else
-                        break;
-            }
-            target->id = current;
-            return;
-        }
+void add(int id, char* name, char* phone, int write) {
+    int i = set.size++;
+    if(id == -1)
+        id = lastId;
+    set.ppl = realloc(set.ppl, set.size * sizeof(human));
+    set.ppl[i].id = id;
+    set.ppl[i].name = name;
+    set.ppl[i].phone = phone;
+    set.ppl[i].true = getTruePhone(phone);
+    if(write) {
+        fprintf(file, "%d %s %s\n", id, name, phone);
+        fflush(file);
     }
+    if(lastId <= id)
+        lastId = id + 1;
 }
 
-int change(int id, const char* value, int name) {
-    human* target = getById(id);
-    if (target == NULL)
-        return 0;
-    if (name)
-        arc(target->name, value);
+int getTrueIndex(int id) {
+    int i;
+    for(i = 0; i < set.size; ++i)
+        if(set.ppl[i].id == id)
+            return i;
+    return -1;
+}
+
+void delete(int id) {
+    id = getTrueIndex(id);
+    if(id == -1) {
+        error("There's no record with given id!");
+        return;
+    }
+    for(int i = id + 1; i < set.size; ++i)
+        set.ppl[i - 1] = set.ppl[i];
+    set.ppl = realloc(set.ppl, --set.size * sizeof(human));
+    rewrite();
+}
+
+void change(int id, int name, char* value) {
+    id = getTrueIndex(id);
+    if(id == -1) {
+        error("There's no record with given id!");
+        return;
+    }
+    human current = set.ppl[id];
+    if(name)
+        strcpy(current.name, value);
     else {
-        arc(target->phone, value);
-        arcPhone(target->truePhone, getTruePhone(value));
+        strcpy(current.phone, value);
+        char* true = getTruePhone(value);
+        strcpy(current.true, true);
+        free(true);
     }
-    return 1;
+    rewrite();
 }
 
-human** find(char* str) {
-    human** result = malloc(M2 * sizeof (human));
-    int i, j = 0;
-    for (i = 0; i < M2; ++i) {
-        if (all[i] == NULL)
-            break;
-        else {
-            human* h = all[i];
-            int a = contains(h->name, str);
-            char* true = getTruePhone(str);
-            int b = equals(h->truePhone, true);
-            free(true);
-            if (a || b)
-                result[j++] = h;
+void find(char* value) {
+    int i, anyone = 0;
+    for(i = 0; i < set.size; ++i) {
+        human current = set.ppl[i];
+        if(contains(current.name, value)) {
+            anyone = 1;
+            printf("%d %s %s\n", current.id, current.name, current.phone);
+            continue;
         }
+        char* true = getTruePhone(value);
+        if(equals(current.true, true)) {
+            anyone = 1;
+            printf("%d %s %s\n", current.id, current.name, current.phone);
+        }
+        free(true);
     }
-    return result;
-}
-
-int removeHuman(int id) {
-    int i, st = 0;
-    for (i = 0; i < M2; ++i)
-        if (all[i] != NULL) {
-            if (all[i]->id == id) {
-                st = i;
-                break;
-            }
-        } else
-            return 0;
-    free(all[st]);
-    all[st] = NULL;
-    for (i = st + 1; i < M2; ++i)
-        if (all[i] != NULL) {
-            all[i - 1] = all[i];
-            all[i] = NULL;
-        } else
-            break;
-    return 1;
+    if(!anyone)
+        error("No one could be found!");
+    else
+        fflush(stdout);
 }
 
 void read() {
     int id;
-    while (!feof(file)) {
-        char name[M], phone[M];
-        int i;
-        for (i = 0; i < M; ++i) {
-            name[i] = 0;
-            phone[i] = 0;
-        }
-        fscanf(file, "%d %s %s", &id, name, phone);
-        if (!strlen(name) || !strlen(phone))
-            continue;
-        human* toAdd = malloc(sizeof (human));
-        toAdd->id = id;
-        arc(toAdd->name, name);
-        arc(toAdd->phone, phone);
-        arcPhone(toAdd->truePhone, getTruePhone(phone));
-        addHuman(toAdd);
-    }
+    while((fscanf(file, "%d", &id)) == 1)
+        add(id, readF(), readF(), 0);
 }
 
 int main(int argc, char** argv) {
-    arc(filename, argv[1]);
+    filename = argv[1];
     file = fopen(filename, "a+");
     rewind(file);
     read();
 
-    char cmd[M];
-    scanf("%s", cmd);
-    while (1) {
-        if (equals(cmd, "create")) {
-            char name[M], phone[M];
-            int i;
-            for (i = 0; i < M; ++i) {
-                name[i] = 0;
-                phone[i] = 0;
-            }
-            scanf("%s %s", name, phone);
-            human* h = malloc(sizeof (human));
-            h->id = -1;
-            arc(h->name, name);
-            arc(h->phone, phone);
-            arcPhone(h->truePhone, getTruePhone(phone));
-            addHuman(h);
-            rewrite();
-        } else if (equals(cmd, "delete")) {
-            int id;
-            scanf("%d", &id);
-            if (removeHuman(id))
-                rewrite();
-            else
-                error("There's no record with given id!");
-        } else if (equals(cmd, "exit")) {
-            break;
-        } else if (equals(cmd, "change")) {
-            int id;
-            scanf("%d", &id);
-            char mode[M], value[M];
-            int i;
-            for (i = 0; i < M; ++i) {
-                mode[i] = 0;
-                value[i] = 0;
-            }
-            scanf("%s %s", mode, value);
-            if (equals(mode, "name")) {
-                if (change(id, value, 1))
-                    rewrite();
-                else
-                    error("There's no record with given id!");
-            } else if (equals(mode, "number")) {
-                if (change(id, value, 0))
-                    rewrite();
-                else
-                    error("There's no record with given id!");
-            } else
-                error("Unknown subcommand for 'change'!");
-        } else if (equals(cmd, "find")) {
-            char str[M];
-            int i;
-            for (i = 0; i < M; ++i)
-                str[i] = 0;
-            scanf("%s", str);
-            human** found = find(str);
-            for (i = 0; i < M2; ++i) {
-                human* h = found[i];
-                if (h == NULL) {
-                    if (i == 0)
-                        error("No one could be found!");
-                    break;
-                }
-                printf("%d %s %s\n", h->id, h->name, h->phone);
-                fflush(stdout);
-            }
-            free(found);
-        } else if (equals(cmd, "print")) {
-            printAll();
-        } else {
-            error("There's no such command!");
-        }
+    char* cmd = malloc(sizeof(char) << 5);
+    while(1) {
         scanf("%s", cmd);
+        if(equals(cmd, "create")) {
+            char* name = readC(), *phone = readC();
+            if(checkForNull(name) && checkForNull(phone))
+                add(-1, name, phone, 1);
+        }else if(equals(cmd, "delete")) {
+            int id;
+            scanf("%d", &id);
+            delete(id);
+        }else if(equals(cmd, "change")) {
+            int id;
+            scanf("%d", &id);
+            char* option = readC(), *value = readC();
+            if(!checkForNull(value))
+                continue;
+            if(equals(option, "name"))
+                change(id, 1, value);
+            else if(equals(option, "number"))
+                change(id, 0, value);
+            else
+                error("Unknown subcommand for 'change'!");
+            free(option);
+            free(value);
+        }else if(equals(cmd, "find")) {
+            char* value = readC();
+            find(value);
+            free(value);
+        }else if(equals(cmd, "exit")) {
+            break;
+        }else {
+            error("Unknown command!");
+        }
     }
-
-    int i;
-    for (i = 0; i < M2; ++i)
-        free(all[i]);
+    
+    free(cmd);
+    for(int i = 0; i < set.size; ++i) {
+        human current = set.ppl[i];
+        free(current.name);
+        free(current.phone);
+        free(current.true);
+    }
+    free(set.ppl);
     fclose(file);
     return (EXIT_SUCCESS);
 }
