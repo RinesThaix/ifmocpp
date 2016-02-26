@@ -34,6 +34,10 @@ typedef struct {
     human* ppl;
 } all;
 
+int equals(const char* a, const char* b) {
+    return !strcmp(a, b);
+}
+
 int checkForNull(const char* value) {
     if(equals(value, "")) {
         error("That string could not be empty!");
@@ -53,10 +57,6 @@ char* getTruePhone(const char* phone) {
         if (phone[i] >= '0' && phone[i] <= '9')
             true[j++] = phone[i];
     return true;
-}
-
-int equals(const char* a, const char* b) {
-    return !strcmp(a, b);
 }
 
 int contains(const char* a, const char* b) {
