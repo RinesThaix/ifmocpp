@@ -27,15 +27,15 @@ int rational::getDenom() const {
 rational rational::operator +(const rational& second) const {
     int n1 = getNum(), d1 = getDenom(), n2 = second.getNum(), d2 = second.getDenom();
     int denom = d1 * d2 / gcd(d1, d2);
-    int nom = (n1 / d1 + n2 / d2) * denom;
-    return rational(nom, denom);
+    int num = n1 * denom / d1 + n2 * denom / d2;
+    return rational(num, denom);
 }
 
 rational rational::operator -(const rational& second) const {
     int n1 = getNum(), d1 = getDenom(), n2 = second.getNum(), d2 = second.getDenom();
     int denom = d1 * d2 / gcd(d1, d2);
-    int nom = (n1 / d1 - n2 / d2) * denom;
-    return rational(nom, denom);
+    int num = n1 * denom / d1 - n2 * denom / d2;
+    return rational(num, denom);
 }
 
 rational rational::operator *(const rational& second) const {
