@@ -12,8 +12,9 @@ rational::rational(int n, int d) {
     rational::denom = d / g;
 }
 
-rational::rational(int r) {
-    rational(r, 1);
+rational::rational(int num) {
+    rational::num = num;
+    rational::denom = 1;
 }
 
 int rational::getNum() const {
