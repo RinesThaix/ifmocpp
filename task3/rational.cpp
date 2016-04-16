@@ -7,9 +7,9 @@ const int rational::gcd(int a, int b) {
 }
 
 rational::rational(int n, int d) {
-    int gcd = gcd(n, d);
-    rational::num = n / gcd;
-    rational::denom = d / gcd;
+    int g = gcd(n, d);
+    rational::num = n / g;
+    rational::denom = d / g;
 }
 
 rational::rational(int r) {
