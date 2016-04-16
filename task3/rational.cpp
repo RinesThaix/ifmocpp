@@ -1,6 +1,6 @@
 #include "rational.h"
 
-const int rational::gcd(int a, int b) {
+int rational::gcd(int a, int b) const {
     if(a == 0)
         return b;
     return gcd(b % a, a);
@@ -16,32 +16,32 @@ rational::rational(int r) {
     rational(r, 1);
 }
 
-const int rational::getNum() {
+int rational::getNum() const {
     return rational::num;
 }
 
-const int rational::getDenom() {
+int rational::getDenom() const {
     return rational::denom;
 }
 
-const rational rational::operator +(const rational& second) {
+rational rational::operator +(const rational& second) const {
     int n1 = getNum(), d1 = getDenom(), n2 = second.getNum(), d2 = second.getDenom();
     int denom = d1 * d2 / gcd(d1, d2);
     int nom = (n1 / d1 + n2 / d2) * denom;
     return rational(nom, denom);
 }
 
-const rational rational::operator -(const rational& second) {
+rational rational::operator -(const rational& second) const {
     int n1 = getNum(), d1 = getDenom(), n2 = second.getNum(), d2 = second.getDenom();
     int denom = d1 * d2 / gcd(d1, d2);
     int nom = (n1 / d1 - n2 / d2) * denom;
     return rational(nom, denom);
 }
 
-const rational rational::operator *(const rational& second) {
+rational rational::operator *(const rational& second) const {
     return rational(getNum() * second.getNum(), getDenom() * second.getDenom());
 }
 
-const rational rational::operator /(const rational& second) {
+rational rational::operator /(const rational& second) const {
     return rational(getNum() * second.getDenom(), getDenom() * second.getNum());
 }

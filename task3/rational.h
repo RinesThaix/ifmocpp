@@ -13,19 +13,19 @@ class rational {
 private:
     int num;
     int denom;
-    const int gcd(int a, int b);
+    int gcd(int a, int b) const;
     
 public:
     rational(int n, int d);
     rational(int r);
     
-    const int getNum();
-    const int getDenom();
+    int getNum() const;
+    int getDenom() const;
     
-    const rational operator +(const rational& second);
-    const rational operator -(const rational& second);
-    const rational operator *(const rational& second);
-    const rational operator /(const rational& second);
+    rational operator +(const rational& second) const;
+    rational operator -(const rational& second) const;
+    rational operator *(const rational& second) const;
+    rational operator /(const rational& second) const;
     
 };
 
