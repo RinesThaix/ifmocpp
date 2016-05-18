@@ -43,6 +43,12 @@ const char& lazy_string::operator[](size_t pos) const {
     return at(pos);
 }
 
+lazy_string lazy_string::substr(size_t pos, size_t len) {
+    if(pos > size())
+        throw out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
+    return lazy_string(this->present, this->start + pos, pos + len > size() ? (size() - pos) : len);
+}
+
 istream& operator>>(istream &is, lazy_string &ls) {
     is >> ls.present;
     ls.start = 0;
@@ -51,7 +57,7 @@ istream& operator>>(istream &is, lazy_string &ls) {
 }
 
 ostream& operator<<(ostream &os, lazy_string &ls) {
-    for(size_t i = ls.start, j = 0; j < ls.sizevar; ++i, ++j)
-        os << ls[i];
+    for(size_t j = 0; j < ls.size(); ++j)
+        os << ls[j];
     return os;
 }

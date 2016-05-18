@@ -67,13 +67,23 @@ public:
     const char& operator[](size_t pos) const;
     
     /**
+     * Returns a newly constructed lazy_string object with its value initialized to a copy of a substring of this object.
+     * @param pos position of the first character to be copied as a substring.
+     * @param len number of characters to include in the substring
+     * (if the string is shorter, as many characters as possible are used).
+     * @return A lazy_string object with a substring of this object.
+     * @throws std::out_of_range whether pos > size()
+     */
+    lazy_string substr(size_t pos = 0, size_t len = string::npos);
+    
+    /**
      * Extracts a lazy_string from the input stream is, storing the sequence in ls,
      * which is overwritten (the previous value of ls is replaced).
      * @param is input stream.
      * @param ls lazy_string.
      * @return the same as parameter is.
      */
-    friend istream& operator>>(istream& is, lazy_string& ls);
+    friend istream& operator>>(istream &is, lazy_string &ls);
     
     /**
      * Inserts the sequence of characters that conforms value of ls into os.
@@ -81,7 +91,7 @@ public:
      * @param ls lazy_string.
      * @return the same as parameter os.
      */
-    friend ostream& operator<<(ostream& os, lazy_string& ls);
+    friend ostream& operator<<(ostream &os, lazy_string &ls);
     
 };
 
