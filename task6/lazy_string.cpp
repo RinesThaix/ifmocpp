@@ -7,6 +7,7 @@
 
 #include "lazy_string.h"
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -45,7 +46,7 @@ const char& lazy_string::operator[](size_t pos) const {
 
 lazy_string lazy_string::substr(size_t pos, size_t len) {
     if(pos > size())
-        throw std::out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
+        throw out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
     return lazy_string(this->present, this->start + pos, pos + len > size() ? (size() - pos) : len);
 }
 
