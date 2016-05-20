@@ -73,6 +73,15 @@ public:
     const char& operator[](size_t pos) const;
     
     /**
+     * Allows you to threadsafely change character at specified index.
+     * @param pos character's index.
+     * @param value the character itself.
+     * @return given value.
+     * @throws std::out_of_range whether pos > size()
+     */
+    const char& setCharAt(size_t pos, const char &value);
+    
+    /**
      * Returns a newly constructed lazy_string object with its value initialized to a copy of a substring of this object.
      * @param pos position of the first character to be copied as a substring.
      * @param len number of characters to include in the substring

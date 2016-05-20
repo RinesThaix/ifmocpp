@@ -65,6 +65,16 @@ const char& lazy_string::operator[](size_t pos) const {
     return at(pos);
 }
 
+const char& lazy_string::setCharAt(size_t pos, const char &value) {
+    if(pos > size())
+        throw out_of_range("Can not set character at specified index (lazy_string)");
+    lock();
+    const string svalue(1, value);
+    this->present.replace(this->start + pos, 1, svalue);
+    unlock();
+    return value;
+}
+
 lazy_string lazy_string::substr(size_t pos, size_t len) {
     if(pos > size())
         throw out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
