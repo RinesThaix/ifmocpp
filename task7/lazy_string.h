@@ -42,7 +42,7 @@ class lazy_string {
 private:
     size_t start, sizevar;
     shared_ptr<string> present;
-    mutable shared_ptr<ReadWriteLock::ReadWriteLock> lock;
+    mutable shared_ptr<ReadWriteLock> lock;
     
 public:
     
