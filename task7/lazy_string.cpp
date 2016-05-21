@@ -80,6 +80,8 @@ lazy_string::lazy_string(const lazy_string &ls) {
     current.writeUnlock();
 }
 
+lazy_string::char_reference::char_reference(lazy_string *ls, size_t index) : ls(ls), index(index) { }
+
 size_t lazy_string::size() const {
     lock->readLock();
     size_t result = this->sizevar;
@@ -98,30 +100,32 @@ const char& lazy_string::at(size_t pos) const {
     return result;
 }
 
+lazy_string::char_reference lazy_string::operator[](size_t pos) {
+    return char_reference(this, pos);
+}
+
 const char& lazy_string::operator[](size_t pos) const {
     return at(pos);
 }
 
-const char& lazy_string::setCharAt(size_t pos, const char &value) {
-    if(pos > size())
-        throw out_of_range("Can not set character at specified index (lazy_string)");
-    ReadWriteLock &current = *(this->lock);
+lazy_string::char_reference &lazy_string::char_reference::operator=(char value) {
+    ReadWriteLock &current = (*this->ls->lock);
     current.writeLock();
     bool updating = false;
-    if(this->present.use_count() > 1) {
-        this->present = make_shared<std::string>(this->present->substr(this->start, this->sizevar));
-        this->start = 0;
+    if(this->ls->present.use_count() > 1) {
+        this->ls->present = make_shared<std::string>(this->ls->present->substr(this->ls->start, this->ls->sizevar));
+        this->ls->start = 0;
         ReadWriteLock newLock;
         newLock.writeLock();
-        this->lock = make_shared<ReadWriteLock>(newLock);
+        this->ls->lock = make_shared<ReadWriteLock>(newLock);
         updating = true;
     }
     const string svalue(1, value);
-    (*this->present).replace(this->start + pos, 1, svalue);
+    (*this->ls->present).replace(this->ls->start + this->index, 1, svalue);
     current.writeUnlock();
     if(updating)
-        lock->writeUnlock();
-    return value;
+        this->ls->lock->writeUnlock();
+    return *this;
 }
 
 lazy_string lazy_string::substr(size_t pos, size_t len) {

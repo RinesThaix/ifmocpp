@@ -1,3 +1,4 @@
+
 /* 
  * File:   lazy_string.h
  * Author: 0xC0deBabe <iam@kostya.sexy>
@@ -38,6 +39,19 @@ public:
 };
 
 class lazy_string {
+    
+    struct char_reference {
+        friend class lazy_string;
+
+        operator char() const;
+        char_reference &operator=(char);
+
+    private:
+        char_reference(lazy_string *, size_t);
+
+        const size_t index;
+        lazy_string *const ls;
+    };
     
 private:
     size_t start, sizevar;
@@ -90,20 +104,18 @@ public:
     const char& at(size_t pos) const;
     
     /**
+     * Allows you to get reference to the character in string and then change it.
+     * @param pos character's index.
+     * @return reference to the character.
+     */
+    char_reference operator[](size_t pos);
+    
+    /**
      * Returns character at specified index.
      * @param character's index.
      * @return character at specified index.
      */
     const char& operator[](size_t pos) const;
-    
-    /**
-     * Allows you to threadsafely change character at specified index.
-     * @param pos character's index.
-     * @param value the character itself.
-     * @return given value.
-     * @throws std::out_of_range whether pos > size()
-     */
-    const char& setCharAt(size_t pos, const char &value);
     
     /**
      * Returns a newly constructed lazy_string object with its value initialized to a copy of a substring of this object.
