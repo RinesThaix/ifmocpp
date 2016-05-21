@@ -30,11 +30,8 @@ public:
     ReadWriteLock();
     
     inline void readLock() const;
-    
     inline void readUnlock() const;
-    
     inline void writeLock();
-    
     inline void writeUnlock();
     
 };
@@ -44,13 +41,7 @@ class lazy_string {
 private:
     size_t start, sizevar;
     shared_ptr<string> present;
-    
     mutable ReadWriteLock lock;
-    
-    void readLock() const;
-    void readUnlock() const;
-    void writeLock() const;
-    void writeUnlock() const;
     
 public:
     

@@ -37,7 +37,7 @@ inline void ReadWriteLock::writeLock() {
         ++this->rec;
         return;
     }
-    while(atomic_exchange_explicit(&this->locked, true, memory_order_acquire))
+    while(atomic_exchange_explicit(&locked, true, memory_order_acquire))
         this_thread::yield();
     while(this->readers > 0)
         this_thread::yield();
@@ -48,7 +48,7 @@ inline void ReadWriteLock::writeLock() {
 inline void ReadWriteLock::writeUnlock() {
     if(--this->rec == 0) {
         this->threadId = thread::id();
-        atomic_store_explicit(&this->locked, false, memory_order_release);
+        atomic_store_explicit(&locked, false, memory_order_release);
     }
 }
 
@@ -64,35 +64,19 @@ lazy_string::lazy_string(const string &string) {
 }
 
 lazy_string::lazy_string(const lazy_string &ls) {
-    writeLock();
-    ls.writeLock();
+    lock.writeLock();
+    ls.lock.writeLock();
     this->present = ls.present;
     this->start = ls.start;
     this->sizevar = ls.sizevar;
-    ls.writeUnlock();
-    writeUnlock();
-}
-
-void lazy_string::writeLock() const {
-    this->lock.writeLock();
-}
-
-void lazy_string::writeUnlock() const {
-    this->lock.writeUnlock();
-}
-
-void lazy_string::readLock() const {
-    this->lock.readLock();
-}
-
-void lazy_string::readUnlock() const {
-    this->lock.readUnlock();
+    ls.lock.writeUnlock();
+    lock.writeUnlock();
 }
 
 size_t lazy_string::size() const {
-    readLock();
+    lock.readLock();
     size_t result = this->sizevar;
-    readUnlock();
+    lock.readUnlock();
     return result;
 }
 
@@ -101,9 +85,9 @@ size_t lazy_string::length() const {
 }
 
 const char& lazy_string::at(size_t pos) const {
-    readLock();
+    lock.readLock();
     const char& result = (*this->present)[this->start + pos];
-    readUnlock();
+    lock.readUnlock();
     return result;
 }
 
@@ -114,38 +98,38 @@ const char& lazy_string::operator[](size_t pos) const {
 const char& lazy_string::setCharAt(size_t pos, const char &value) {
     if(pos > size())
         throw out_of_range("Can not set character at specified index (lazy_string)");
-    writeLock();
+    lock.writeLock();
     const string svalue(1, value);
     (*this->present).replace(this->start + pos, 1, svalue);
-    writeUnlock();
+    lock.writeUnlock();
     return value;
 }
 
 lazy_string lazy_string::substr(size_t pos, size_t len) {
     if(pos > size())
         throw out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
-    readLock();
+    lock.readLock();
     lazy_string result;
     result.present = this->present;
     result.start = this->start + pos;
     result.sizevar = pos + len > this->sizevar ? this->sizevar - pos : len;
-    readUnlock();
+    lock.readUnlock();
     return result;
 }
 
 istream& operator>>(istream &is, lazy_string &ls) {
-    ls.writeLock();
+    ls.lock.writeLock();
     is >> *ls.present;
     ls.start = 0;
     ls.sizevar = (*ls.present).size();
-    ls.writeUnlock();
+    ls.lock.writeUnlock();
     return is;
 }
 
 ostream& operator<<(ostream &os, lazy_string &ls) {
-    ls.readLock();
+    ls.lock.readLock();
         for(size_t j = 0; j < ls.size(); ++j)
             os << (*ls.present)[ls.start + j];
-    ls.readUnlock();
+    ls.lock.readUnlock();
     return os;
 }
