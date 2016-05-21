@@ -11,7 +11,8 @@
 #include <string>
 #include <istream>
 #include <ostream>
-#include <pthread.h>
+#include <mutex>
+#include <atomic>
 
 using namespace std;
 
@@ -19,13 +20,15 @@ class lazy_string {
     
 private:
     size_t start, sizevar;
-    string present;
-    lazy_string(const lazy_string &parent, size_t start, size_t size);
-    mutable pthread_mutex_t sync;
+    shared_ptr<string> present;
     
-    void lock() const;
+    mutable mutex mutex;
+    mutable atomic<int> readers;
     
-    void unlock() const;
+    void readLock() const;
+    void readUnlock() const;
+    void writeLock() const;
+    void writeUnlock() const;
     
 public:
     
@@ -36,9 +39,16 @@ public:
     
     /**
      * Creates new lazy_string from the given std::string.
+     * @param string the string.
      * @return lazy_string instance.
      */
     lazy_string(const string &string);
+    
+    /**
+     * Creates new lazy_string from the given lazy_string.
+     * @param ls the lazy_stirng.
+     */
+    lazy_string(const lazy_string &ls);
     
     /**
      * Returns string's length (size).
@@ -111,4 +121,3 @@ public:
 };
 
 #endif	/* LAZY_STRING_H */
-
