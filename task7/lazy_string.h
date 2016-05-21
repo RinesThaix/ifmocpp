@@ -13,8 +13,31 @@
 #include <ostream>
 #include <mutex>
 #include <atomic>
+#include <thread>
 
 using namespace std;
+
+class ReadWriteLock {
+    
+private:
+    mutable atomic<int> readers;
+    mutable atomic<bool> locked;
+    atomic<thread::id> threadId;
+    atomic<int> rec;
+    
+public:
+    
+    ReadWriteLock();
+    
+    inline void readLock() const;
+    
+    inline void readUnlock() const;
+    
+    inline void writeLock();
+    
+    inline void writeUnlock();
+    
+};
 
 class lazy_string {
     
@@ -22,8 +45,7 @@ private:
     size_t start, sizevar;
     shared_ptr<string> present;
     
-    mutable mutex mutex;
-    mutable atomic<int> readers;
+    mutable ReadWriteLock lock;
     
     void readLock() const;
     void readUnlock() const;

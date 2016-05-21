@@ -15,6 +15,43 @@
 
 using namespace std;
 
+ReadWriteLock::ReadWriteLock() : readers(0), locked(false), rec(0) {}
+
+inline void ReadWriteLock::readLock() const {
+    if(this->threadId == this_thread::get_id()) {
+        ++this->readers;
+        return;
+    }
+    while(locked)
+        this_thread::yield();
+    ++this->readers;
+}
+
+inline void ReadWriteLock::readUnlock() const {
+    --this->readers;
+}
+
+inline void ReadWriteLock::writeLock() {
+    thread::id id = this_thread::get_id();
+    if(id == this->threadId) {
+        ++this->rec;
+        return;
+    }
+    while(atomic_exchange_explicit(&this->locked, true, memory_order_acquire))
+        this_thread::yield();
+    while(this->readers > 0)
+        this_thread::yield();
+    this->threadId = id;
+    ++this->rec;
+}
+
+inline void ReadWriteLock::writeUnlock() {
+    if(--this->rec == 0) {
+        this->threadId = thread::id();
+        atomic_store_explicit(&this->locked, false, memory_order_release);
+    }
+}
+
 lazy_string::lazy_string() {
     this->present = make_shared<std::string>(string());
     this->start = this->sizevar = 0;
@@ -37,26 +74,19 @@ lazy_string::lazy_string(const lazy_string &ls) {
 }
 
 void lazy_string::writeLock() const {
-    mutex.lock();
-    while(this->readers > 0) {
-        this_thread::sleep_for(chrono::milliseconds(10));
-    }
+    this->lock.writeLock();
 }
 
 void lazy_string::writeUnlock() const {
-    mutex.unlock();
+    this->lock.writeUnlock();
 }
 
 void lazy_string::readLock() const {
-    mutex.lock();
-    ++this->readers;
-    mutex.unlock();
+    this->lock.readLock();
 }
 
 void lazy_string::readUnlock() const {
-    mutex.lock();
-    --this->readers;
-    mutex.unlock();
+    this->lock.readUnlock();
 }
 
 size_t lazy_string::size() const {
