@@ -17,6 +17,9 @@ using namespace std;
 
 ReadWriteLock::ReadWriteLock() : readers(0), locked(false), rec(0) {}
 
+ReadWriteLock::ReadWriteLock(const ReadWriteLock &lock) :
+    readers((int) lock.readers), locked((bool) lock.locked), rec((int) lock.rec) {}
+
 inline void ReadWriteLock::readLock() const {
     if(this->threadId == this_thread::get_id()) {
         ++this->readers;
@@ -55,28 +58,32 @@ inline void ReadWriteLock::writeUnlock() {
 lazy_string::lazy_string() {
     this->present = make_shared<std::string>(string());
     this->start = this->sizevar = 0;
+    this->lock = make_shared<ReadWriteLock::ReadWriteLock>(ReadWriteLock());
 }
 
 lazy_string::lazy_string(const string &string) {
     this->present = make_shared<std::string>(string);
     this->start = 0;
     this->sizevar = string.size();
+    this->lock = make_shared<ReadWriteLock::ReadWriteLock>(ReadWriteLock());
 }
 
 lazy_string::lazy_string(const lazy_string &ls) {
-    lock.writeLock();
-    ls.lock.writeLock();
+    ReadWriteLock &current = (*this->lock);
+    current.writeLock();
+    (*ls.lock).writeLock();
     this->present = ls.present;
     this->start = ls.start;
     this->sizevar = ls.sizevar;
-    ls.lock.writeUnlock();
-    lock.writeUnlock();
+    this->lock = ls.lock;
+    (*ls.lock).writeUnlock();
+    current.writeUnlock();
 }
 
 size_t lazy_string::size() const {
-    lock.readLock();
+    lock->readLock();
     size_t result = this->sizevar;
-    lock.readUnlock();
+    lock->readUnlock();
     return result;
 }
 
@@ -85,9 +92,9 @@ size_t lazy_string::length() const {
 }
 
 const char& lazy_string::at(size_t pos) const {
-    lock.readLock();
+    lock->readLock();
     const char& result = (*this->present)[this->start + pos];
-    lock.readUnlock();
+    lock->readUnlock();
     return result;
 }
 
@@ -98,38 +105,50 @@ const char& lazy_string::operator[](size_t pos) const {
 const char& lazy_string::setCharAt(size_t pos, const char &value) {
     if(pos > size())
         throw out_of_range("Can not set character at specified index (lazy_string)");
-    lock.writeLock();
+    ReadWriteLock &current = *(this->lock);
+    current.writeLock();
+    bool updating = false;
+    if(this->present.use_count() > 1) {
+        this->present = make_shared<std::string>(this->present->substr(this->start, this->sizevar));
+        this->start = 0;
+        ReadWriteLock newLock;
+        newLock.writeLock();
+        this->lock = make_shared<ReadWriteLock>(newLock);
+        updating = true;
+    }
     const string svalue(1, value);
     (*this->present).replace(this->start + pos, 1, svalue);
-    lock.writeUnlock();
+    current.writeUnlock();
+    if(updating)
+        lock->writeUnlock();
     return value;
 }
 
 lazy_string lazy_string::substr(size_t pos, size_t len) {
     if(pos > size())
         throw out_of_range("Can not take substring of given length from the given starting position (lazy_string)");
-    lock.readLock();
+    lock->readLock();
     lazy_string result;
     result.present = this->present;
     result.start = this->start + pos;
     result.sizevar = pos + len > this->sizevar ? this->sizevar - pos : len;
-    lock.readUnlock();
+    lock->readUnlock();
     return result;
 }
 
 istream& operator>>(istream &is, lazy_string &ls) {
-    ls.lock.writeLock();
+    ls.lock->writeLock();
     is >> *ls.present;
     ls.start = 0;
     ls.sizevar = (*ls.present).size();
-    ls.lock.writeUnlock();
+    ls.lock->writeUnlock();
     return is;
 }
 
 ostream& operator<<(ostream &os, lazy_string &ls) {
-    ls.lock.readLock();
+    ls.lock->readLock();
         for(size_t j = 0; j < ls.size(); ++j)
             os << (*ls.present)[ls.start + j];
-    ls.lock.readUnlock();
+    ls.lock->readUnlock();
     return os;
 }
