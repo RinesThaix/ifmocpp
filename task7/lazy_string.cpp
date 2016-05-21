@@ -58,14 +58,14 @@ inline void ReadWriteLock::writeUnlock() {
 lazy_string::lazy_string() {
     this->present = make_shared<std::string>(string());
     this->start = this->sizevar = 0;
-    this->lock = make_shared<ReadWriteLock::ReadWriteLock>(ReadWriteLock());
+    this->lock = make_shared<ReadWriteLock>(ReadWriteLock());
 }
 
 lazy_string::lazy_string(const string &string) {
     this->present = make_shared<std::string>(string);
     this->start = 0;
     this->sizevar = string.size();
-    this->lock = make_shared<ReadWriteLock::ReadWriteLock>(ReadWriteLock());
+    this->lock = make_shared<ReadWriteLock>(ReadWriteLock());
 }
 
 lazy_string::lazy_string(const lazy_string &ls) {
